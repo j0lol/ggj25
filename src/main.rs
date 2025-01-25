@@ -35,7 +35,15 @@ impl<T> Matrix2D<T> {
     }
 }
 
-type Tiles = Matrix2D<bool>;
+enum Tile {
+    Empty,
+    Wall,
+    Block,
+    Target,
+    PlayerSpawn
+}
+
+type Tiles = Matrix2D<Tile>;
 
 struct Player {
     tilepos: fixnum::Vector2D<i16>,
