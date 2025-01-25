@@ -3,7 +3,8 @@ use agb::{
     input::{self, Button},
 };
 
-use crate::{screen, State, Tile, Tiles, BUBBLE};
+use crate::{screen, State, Tile, Tiles, BUBBLE, Bubble};
+use fixnum::Vector2D;
 
 pub struct Player {
     pub tilepos: fixnum::Vector2D<i16>,
@@ -52,6 +53,9 @@ impl Player {
                 ) || state.boxes.iter().any(|o| o.position() == screen(self.tilepos + self.movement_intent)) {
                     agb::println!("nah");
                 } else {
+                    if let Some(bubble) = state.bubbles.iter_mut().find(|o| o.contents.position() == screen(self.tilepos + self.movement_intent)) {
+                        bubble.push(self.movement_intent);
+                    }
                     self.tilepos += self.movement_intent;
                     self.move_lock = 16;
                 }
@@ -69,7 +73,8 @@ impl Player {
             new_bubble
                 .set_position(screen(self.tilepos + self.movement_intent))
                 .show();
-            state.bubbles.push(new_bubble);
+            let bubble = Bubble {contents : new_bubble, motion: Vector2D {x: 0, y: 0}};
+            state.bubbles.push(bubble);
         }
     }
 

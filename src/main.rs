@@ -11,6 +11,7 @@ use agb::display::tiled::TiledMap;
 use agb::input::Button;
 use agb::*;
 use alloc::vec::Vec;
+use bubble::Bubble;
 use display::object::Object;
 use display::{
     palette16::Palette16,
@@ -88,7 +89,7 @@ fn screen(v2: fixnum::Vector2D<i16>) -> fixnum::Vector2D<i32> {
 
 #[derive(Default)]
 struct State<'oam> {
-    bubbles: Vec<display::object::Object<'oam>>,
+    bubbles: Vec<Bubble<'oam>>,
     boxes: Vec<Object<'oam>>,
 }
 
