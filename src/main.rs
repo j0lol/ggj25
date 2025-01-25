@@ -8,6 +8,8 @@
 use agb::input::Button;
 use agb::*;
 
+mod bubble;
+
 const TILE_SIZE: u16 = 16_u16; // px
 
 static GRAPHICS: &display::object::Graphics = include_aseprite!("gfx/spritesheet.aseprite");
@@ -23,6 +25,7 @@ struct GameObject<'a> {
 
 extern crate alloc;
 use alloc::vec::Vec;
+use fixnum::Vector2D;
 struct Matrix2D<T> {
     width: usize,
     height: usize,
@@ -33,6 +36,10 @@ impl<T> Matrix2D<T> {
     pub fn get(&self, x: usize, y: usize) -> Option<&T> {
         self.internal.get(x * self.width + y)
     }
+}
+
+struct Block {
+    position : Vector2D<i16> ,
 }
 
 enum Tile {
