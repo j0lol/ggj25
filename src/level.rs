@@ -11,8 +11,9 @@ X             X
 XXXXXXXXXXXXXXX
 "#;
 
+use agb::{display::object::{OamManaged, Object}, fixnum::Vector2D};
 use alloc::{string::String, vec::Vec};
-use crate::{Matrix2D, Tile, Tiles};
+use crate::{screen, Matrix2D, Tile, Tiles, BLOCK};
 
 // const w/o debug
 fn tile_dispatch(c: char) -> Tile {
@@ -48,4 +49,34 @@ pub fn player_spawn(map: &Tiles) -> (usize, usize) {
     }
 
     panic!("you didnt put a spawn!");
+}
+
+pub struct Level {
+    pub tiles: Tiles,
+}
+
+impl Level {
+    pub fn new() -> Self {
+        let tiles = level_parse(LEVEL);
+        Level { tiles }
+    }
+
+    pub fn make_boxes<'obj>(&self, object: &'obj OamManaged) -> Vec<Object<'obj>> {
+
+        let mut boxes = Vec::new();
+
+        for (n, t) in self.tiles.internal.iter().enumerate() {
+            if let Tile::Block = t {
+                let (x,y) = (n % self.tiles.width, n / self.tiles.width);
+
+                let mut new_box = object.object_sprite(BLOCK.sprite(0));
+                new_box
+                    .set_position(screen(Vector2D::new(x as i16, y as i16)))
+                    .show();
+                boxes.push(new_box);
+            }
+        }
+
+        boxes
+    }
 }
