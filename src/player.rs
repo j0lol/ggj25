@@ -42,14 +42,14 @@ impl Player {
             if let Some(intent) = direction_dispatch(input) {
                 self.movement_intent = intent;
 
-                if [Tile::Block, Tile::Wall].contains(
+                if Tile::Wall == *(
                     level
                         .get(
                             (self.tilepos + self.movement_intent).x as usize,
                             (self.tilepos + self.movement_intent).y as usize,
                         )
-                        .unwrap(),
-                ) {
+                        .unwrap()
+                ) || state.boxes.iter().any(|o| o.position() == screen(self.tilepos + self.movement_intent)) {
                     agb::println!("nah");
                 } else {
                     self.tilepos += self.movement_intent;
