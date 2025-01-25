@@ -1,13 +1,12 @@
 #![no_std]
 #![no_main]
-
 // This is required to allow writing tests
 #![cfg_attr(test, feature(custom_test_frameworks))]
 #![cfg_attr(test, reexport_test_harness_main = "test_main")]
 #![cfg_attr(test, test_runner(agb::test_runner::test_runner))]
 
-use agb::*;
 use agb::input::Button;
+use agb::*;
 
 const TILE_SIZE: u16 = 16_u16; // px
 
@@ -19,15 +18,15 @@ static BLOCK: &display::object::Tag = GRAPHICS.tags().get("Block");
 static BUBBLE: &display::object::Tag = GRAPHICS.tags().get("Bubble");
 
 struct GameObject<'a> {
-    oam_object: display::object::Object<'a>
+    oam_object: display::object::Object<'a>,
 }
 
 extern crate alloc;
 use alloc::vec::Vec;
-struct Matrix2D<T>{
+struct Matrix2D<T> {
     width: usize,
     height: usize,
-    internal: alloc::vec::Vec<T>
+    internal: alloc::vec::Vec<T>,
 }
 
 impl<T> Matrix2D<T> {
@@ -38,8 +37,6 @@ impl<T> Matrix2D<T> {
 
 type Tiles = Matrix2D<bool>;
 
-
-
 struct Player {
     tilepos: fixnum::Vector2D<i16>,
     movement_intent: fixnum::Vector2D<i16>,
@@ -47,15 +44,16 @@ struct Player {
 }
 
 fn direction_dispatch(input: &input::ButtonController) -> Option<fixnum::Vector2D<i16>> {
-
     if input.x_tri() == input::Tri::Zero && input.y_tri() == input::Tri::Zero {
         return None;
     }
-    return Some(fixnum::Vector2D::new(input.x_tri() as i16, input.y_tri() as i16));
+    return Some(fixnum::Vector2D::new(
+        input.x_tri() as i16,
+        input.y_tri() as i16,
+    ));
 }
 
 impl Player {
-
     fn new(x: i16, y: i16) -> Player {
         Player {
             tilepos: fixnum::Vector2D::new(x, y),
@@ -64,7 +62,13 @@ impl Player {
         }
     }
 
-    fn input(&mut self, input: &input::ButtonController, oammanaged: &display::object::OamManaged) {
+    fn input<'oam>(
+        &mut self,
+        input: &input::ButtonController,
+        oammanaged: &'oam display::object::OamManaged<'oam>,
+        state: &mut State<'oam>,
+    ) {
+        // Movement
         if self.move_lock == 0 {
             if let Some(intent) = direction_dispatch(input) {
                 self.movement_intent = intent;
@@ -78,21 +82,33 @@ impl Player {
             panic!("NEGATIVE LOCK");
         }
 
+        // Bubble spawner
         if (input.is_just_pressed(Button::A)) {
             let mut new_bubble = oammanaged.object_sprite(BUBBLE.sprite(0));
-            new_bubble.set_x((self.tilepos.x * TILE_SIZE as i16) as u16).set_y((self.tilepos.y * TILE_SIZE as i16) as u16).show();
+            new_bubble
+                .set_position(screen(self.tilepos + self.movement_intent))
+                .show();
+            state.bubbles.push(new_bubble);
         }
     }
 
-
     fn update(&self, oam: &mut display::object::Object) {
-        oam.set_position(self.tilepos.change_base() * TILE_SIZE as i32);
+        oam.set_position(screen(self.tilepos));
     }
+}
+
+// Tilespace to Screenspace, named functionally (badly)
+fn screen(v2: fixnum::Vector2D<i16>) -> fixnum::Vector2D<i32> {
+    (v2 * TILE_SIZE as i16).change_base()
+}
+
+#[derive(Default)]
+struct State<'oam> {
+    bubbles: Vec<display::object::Object<'oam>>,
 }
 
 #[agb::entry]
 fn main(mut gba: agb::Gba) -> ! {
-
     let object: display::object::OamManaged = gba.display.object.get_managed();
 
     let mut player = object.object_sprite(PLAYER.sprite(0));
@@ -102,8 +118,10 @@ fn main(mut gba: agb::Gba) -> ! {
 
     player.set_x(50).set_y(50).show();
 
+    let mut state = State::default();
+
     loop {
-        pl.input(&input, &object);
+        pl.input(&input, &object, &mut state);
         pl.update(&mut player);
 
         agb::display::busy_wait_for_vblank();
