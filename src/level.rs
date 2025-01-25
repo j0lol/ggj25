@@ -1,7 +1,7 @@
 pub const LEVEL: &'static str = r#"
 XXXXXXXXXXXXXXX
-X    t        X
-X             X
+X    tX       X
+X  XXXX       X
 X             X
 X             X
 X    b        X

@@ -5,13 +5,23 @@
 #![cfg_attr(test, reexport_test_harness_main = "test_main")]
 #![cfg_attr(test, test_runner(agb::test_runner::test_runner))]
 
+extern crate alloc;
+
+use agb::display::tiled::TiledMap;
 use agb::input::Button;
 use agb::*;
-use agb::display::tiled::TiledMap;
-
-mod level;
+use alloc::vec::Vec;
+use display::object::Object;
+use display::{
+    palette16::Palette16,
+    tiled::{RegularBackgroundSize, TileFormat},
+    Priority,
+};
+use fixnum::Vector2D;
 
 mod bubble;
+mod level;
+mod player;
 
 const TILE_SIZE: u16 = 16_u16; // px
 
@@ -27,11 +37,6 @@ static BUBBLE: &display::object::Tag = GRAPHICS.tags().get("Bubble");
 struct GameObject<'a> {
     oam_object: display::object::Object<'a>,
 }
-
-extern crate alloc;
-use alloc::vec::Vec;
-use display::object::Object;
-use fixnum::Vector2D;
 
 #[derive(Clone, Debug)]
 struct Matrix2D<T> {
@@ -51,10 +56,9 @@ impl<T> Matrix2D<T> {
             internal: vec,
         }
     }
-
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 enum Tile {
     Empty,
     Wall,
@@ -66,71 +70,16 @@ enum Tile {
 
 // Converts 16x to 4 8x8 tiles
 pub fn tile_indexer(t: usize, tilemap_width: usize) -> (usize, usize, usize, usize) {
-    let num = t*2;
-    (num, num+1, tilemap_width*2 + num, tilemap_width*2 + num + 1)
+    let num = t * 2;
+    (
+        num,
+        num + 1,
+        tilemap_width * 2 + num,
+        tilemap_width * 2 + num + 1,
+    )
 }
 
 type Tiles = Matrix2D<Tile>;
-
-struct Player {
-    tilepos: fixnum::Vector2D<i16>,
-    movement_intent: fixnum::Vector2D<i16>,
-    move_lock: u16,
-}
-
-fn direction_dispatch(input: &input::ButtonController) -> Option<fixnum::Vector2D<i16>> {
-    if input.x_tri() == input::Tri::Zero && input.y_tri() == input::Tri::Zero {
-        return None;
-    }
-    return Some(fixnum::Vector2D::new(
-        input.x_tri() as i16,
-        input.y_tri() as i16,
-    ));
-}
-
-impl Player {
-    fn new(x: i16, y: i16) -> Player {
-        Player {
-            tilepos: fixnum::Vector2D::new(x, y),
-            movement_intent: fixnum::Vector2D::new(0, 0),
-            move_lock: 0,
-        }
-    }
-
-    fn input<'oam>(
-        &mut self,
-        input: &input::ButtonController,
-        oammanaged: &'oam display::object::OamManaged<'oam>,
-        state: &mut State<'oam>,
-    ) {
-        // Movement
-        if self.move_lock == 0 {
-            if let Some(intent) = direction_dispatch(input) {
-                self.movement_intent = intent;
-                self.tilepos += self.movement_intent;
-                self.move_lock = 16;
-            }
-        } else if self.move_lock > 0 {
-            // tween? TODO
-            self.move_lock -= 1;
-        } else {
-            panic!("NEGATIVE LOCK");
-        }
-
-        // Bubble spawner
-        if (input.is_just_pressed(Button::A)) {
-            let mut new_bubble = oammanaged.object_sprite(BUBBLE.sprite(0));
-            new_bubble
-                .set_position(screen(self.tilepos + self.movement_intent))
-                .show();
-            state.bubbles.push(new_bubble);
-        }
-    }
-
-    fn update(&self, oam: &mut display::object::Object) {
-        oam.set_position(screen(self.tilepos));
-    }
-}
 
 // Tilespace to Screenspace, named functionally (badly)
 fn screen(v2: fixnum::Vector2D<i16>) -> fixnum::Vector2D<i32> {
@@ -140,13 +89,11 @@ fn screen(v2: fixnum::Vector2D<i16>) -> fixnum::Vector2D<i32> {
 #[derive(Default)]
 struct State<'oam> {
     bubbles: Vec<display::object::Object<'oam>>,
-    boxes: Vec<Object<'oam>>
+    boxes: Vec<Object<'oam>>,
 }
 
 #[agb::entry]
 fn main(mut gba: agb::Gba) -> ! {
-    use display::{palette16::Palette16, tiled::{RegularBackgroundSize, TileFormat}, Priority};
-
     let object: display::object::OamManaged = gba.display.object.get_managed();
 
     let mut player = object.object_sprite(PLAYER.sprite(0));
@@ -157,8 +104,11 @@ fn main(mut gba: agb::Gba) -> ! {
 
     let (px, py) = level::player_spawn(&level);
 
-    let mut pl = Player::new(px as _, py as _);
-    player.set_x(px as u16*TILE_SIZE).set_y(py as u16*TILE_SIZE).show();
+    let mut pl = player::Player::new(px as _, py as _);
+    player
+        .set_x(px as u16 * TILE_SIZE)
+        .set_y(py as u16 * TILE_SIZE)
+        .show();
 
     let mut state = State::default();
 
@@ -167,25 +117,48 @@ fn main(mut gba: agb::Gba) -> ! {
 
     vram.set_background_palettes(tiles::PALETTES);
 
-    let mut bg = gfx.background(Priority::P0, RegularBackgroundSize::Background32x32, tileset.format());
+    let mut bg = gfx.background(
+        Priority::P0,
+        RegularBackgroundSize::Background32x32,
+        tileset.format(),
+    );
 
     for y in 0..level.height as u16 {
         for x in 0..level.width as u16 {
-
             let tile = level.get(x as usize, y as usize).unwrap();
             let (t1, t2, t3, t4) = tile_indexer(*tile as usize, 6);
 
-            bg.set_tile(&mut vram, (x*2, y*2), tileset, tiles::tiles.tile_settings[t1]);
-            bg.set_tile(&mut vram, (x*2+1, y*2), tileset, tiles::tiles.tile_settings[t2]);
-            bg.set_tile(&mut vram, (x*2, y*2+1), tileset, tiles::tiles.tile_settings[t3]);
-            bg.set_tile(&mut vram, (x*2+1, y*2+1), tileset, tiles::tiles.tile_settings[t4]);
+            bg.set_tile(
+                &mut vram,
+                (x * 2, y * 2),
+                tileset,
+                tiles::tiles.tile_settings[t1],
+            );
+            bg.set_tile(
+                &mut vram,
+                (x * 2 + 1, y * 2),
+                tileset,
+                tiles::tiles.tile_settings[t2],
+            );
+            bg.set_tile(
+                &mut vram,
+                (x * 2, y * 2 + 1),
+                tileset,
+                tiles::tiles.tile_settings[t3],
+            );
+            bg.set_tile(
+                &mut vram,
+                (x * 2 + 1, y * 2 + 1),
+                tileset,
+                tiles::tiles.tile_settings[t4],
+            );
         }
     }
     bg.commit(&mut vram);
     bg.set_visible(true);
 
     loop {
-        pl.input(&input, &object, &mut state);
+        pl.input(&input, &object, &mut state, &level);
         pl.update(&mut player);
 
         agb::display::busy_wait_for_vblank();
