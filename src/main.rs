@@ -7,12 +7,17 @@
 
 use agb::input::Button;
 use agb::*;
+use agb::display::tiled::TiledMap;
+
+mod level;
 
 mod bubble;
 
 const TILE_SIZE: u16 = 16_u16; // px
 
 static GRAPHICS: &display::object::Graphics = include_aseprite!("gfx/spritesheet.aseprite");
+
+agb::include_background_gfx!(tiles, tiles => "gfx/tileset.aseprite");
 
 // thank you HackSussex for the player name
 static PLAYER: &display::object::Tag = GRAPHICS.tags().get("Garlick");
@@ -27,6 +32,8 @@ extern crate alloc;
 use alloc::vec::Vec;
 use display::object::Object;
 use fixnum::Vector2D;
+
+#[derive(Clone, Debug)]
 struct Matrix2D<T> {
     width: usize,
     height: usize,
@@ -35,16 +42,32 @@ struct Matrix2D<T> {
 
 impl<T> Matrix2D<T> {
     pub fn get(&self, x: usize, y: usize) -> Option<&T> {
-        self.internal.get(x * self.width + y)
+        self.internal.get(y * self.width + x)
     }
+    pub fn from_vec(vec: Vec<T>, width: usize, height: usize) -> Matrix2D<T> {
+        Matrix2D::<T> {
+            width,
+            height,
+            internal: vec,
+        }
+    }
+
 }
 
+#[derive(Copy, Clone, Debug)]
 enum Tile {
     Empty,
     Wall,
-    Block,
     Target,
-    PlayerSpawn
+    Block,
+    FulfilledTarget,
+    PlayerSpawn,
+}
+
+// Converts 16x to 4 8x8 tiles
+pub fn tile_indexer(t: usize, tilemap_width: usize) -> (usize, usize, usize, usize) {
+    let num = t*2;
+    (num, num+1, tilemap_width*2 + num, tilemap_width*2 + num + 1)
 }
 
 type Tiles = Matrix2D<Tile>;
@@ -122,16 +145,44 @@ struct State<'oam> {
 
 #[agb::entry]
 fn main(mut gba: agb::Gba) -> ! {
+    use display::{palette16::Palette16, tiled::{RegularBackgroundSize, TileFormat}, Priority};
+
     let object: display::object::OamManaged = gba.display.object.get_managed();
 
     let mut player = object.object_sprite(PLAYER.sprite(0));
+
     let mut input = agb::input::ButtonController::new();
 
-    let mut pl = Player::new(3, 3);
+    let level = level::level_parse(level::LEVEL);
 
-    player.set_x(50).set_y(50).show();
+    let (px, py) = level::player_spawn(&level);
+
+    let mut pl = Player::new(px as _, py as _);
+    player.set_x(px as u16*TILE_SIZE).set_y(py as u16*TILE_SIZE).show();
 
     let mut state = State::default();
+
+    let (gfx, mut vram) = gba.display.video.tiled0();
+    let tileset = &tiles::tiles.tiles;
+
+    vram.set_background_palettes(tiles::PALETTES);
+
+    let mut bg = gfx.background(Priority::P0, RegularBackgroundSize::Background32x32, tileset.format());
+
+    for y in 0..level.height as u16 {
+        for x in 0..level.width as u16 {
+
+            let tile = level.get(x as usize, y as usize).unwrap();
+            let (t1, t2, t3, t4) = tile_indexer(*tile as usize, 6);
+
+            bg.set_tile(&mut vram, (x*2, y*2), tileset, tiles::tiles.tile_settings[t1]);
+            bg.set_tile(&mut vram, (x*2+1, y*2), tileset, tiles::tiles.tile_settings[t2]);
+            bg.set_tile(&mut vram, (x*2, y*2+1), tileset, tiles::tiles.tile_settings[t3]);
+            bg.set_tile(&mut vram, (x*2+1, y*2+1), tileset, tiles::tiles.tile_settings[t4]);
+        }
+    }
+    bg.commit(&mut vram);
+    bg.set_visible(true);
 
     loop {
         pl.input(&input, &object, &mut state);
