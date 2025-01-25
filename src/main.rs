@@ -25,6 +25,7 @@ struct GameObject<'a> {
 
 extern crate alloc;
 use alloc::vec::Vec;
+use display::object::Object;
 use fixnum::Vector2D;
 struct Matrix2D<T> {
     width: usize,
@@ -36,10 +37,6 @@ impl<T> Matrix2D<T> {
     pub fn get(&self, x: usize, y: usize) -> Option<&T> {
         self.internal.get(x * self.width + y)
     }
-}
-
-struct Block {
-    position : Vector2D<i16> ,
 }
 
 enum Tile {
@@ -120,6 +117,7 @@ fn screen(v2: fixnum::Vector2D<i16>) -> fixnum::Vector2D<i32> {
 #[derive(Default)]
 struct State<'oam> {
     bubbles: Vec<display::object::Object<'oam>>,
+    boxes: Vec<Object<'oam>>
 }
 
 #[agb::entry]
