@@ -160,37 +160,7 @@ fn main(mut gba: agb::Gba) -> ! {
         tileset.format(),
     );
 
-    for y in 0..level.tiles.height as u16 {
-        for x in 0..level.tiles.width as u16 {
-            let tile = level.tiles.get(x as usize, y as usize).unwrap();
-            let (t1, t2, t3, t4) = tile_indexer(*tile as usize, 6);
-
-            bg.set_tile(
-                &mut vram,
-                (x * 2, y * 2),
-                tileset,
-                tiles::tiles.tile_settings[t1],
-            );
-            bg.set_tile(
-                &mut vram,
-                (x * 2 + 1, y * 2),
-                tileset,
-                tiles::tiles.tile_settings[t2],
-            );
-            bg.set_tile(
-                &mut vram,
-                (x * 2, y * 2 + 1),
-                tileset,
-                tiles::tiles.tile_settings[t3],
-            );
-            bg.set_tile(
-                &mut vram,
-                (x * 2 + 1, y * 2 + 1),
-                tileset,
-                tiles::tiles.tile_settings[t4],
-            );
-        }
-    }
+    level.draw(&mut vram, &mut bg);
     bg.commit(&mut vram);
     bg.set_visible(true);
 
