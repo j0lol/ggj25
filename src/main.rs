@@ -7,13 +7,15 @@
 
 extern crate alloc;
 
+use core::cell::RefCell;
+
 use agb::display::tiled::TiledMap;
 use agb::input::Button;
 use agb::*;
 use alloc::rc::Rc;
 use alloc::vec::Vec;
 use bubble::Bubble;
-use display::object::Object;
+use display::object::{OamManaged, Object};
 use display::{
     palette16::Palette16,
     tiled::{RegularBackgroundSize, TileFormat},
@@ -94,10 +96,19 @@ fn tile(v2: fixnum::Vector2D<i32>) -> fixnum::Vector2D<i16> {
     Vector2D::new(x as i16, y as i16) / TILE_SIZE as i16
 }
 
-#[derive(Default)]
-struct State<'oam> {
-    bubbles: Vec<Bubble<'oam>>,
-    boxes: Vec<Rc<Object<'oam>>>,
+struct State<'a> {
+    bubbles: Vec<Rc<RefCell<Bubble<'a>>>>,
+    boxes: Vec<Rc<RefCell<Object<'a>>>>,
+}
+
+impl<'a> State<'a> {
+
+    fn new() -> Self {
+        State::<'a> {
+            boxes: Vec::new(),
+            bubbles: Vec::new()
+        }
+    }
 }
 
 #[agb::entry]
@@ -148,7 +159,7 @@ fn main(mut gba: agb::Gba) -> ! {
         .set_y(py as u16 * TILE_SIZE)
         .show();
 
-    let mut state = State::default();
+    let mut state = State::new();
     state.boxes = level.make_boxes(&object);
 
     let (gfx, mut vram) = gba.display.video.tiled0();
@@ -167,10 +178,28 @@ fn main(mut gba: agb::Gba) -> ! {
     bg.set_visible(true);
 
     loop {
-        {pl.input(&input, &object, &mut state, &level.tiles);}
+        pl.input(&input, &object, &mut state, &level.tiles);
         pl.update(&mut player);
-        let i = state.bubbles.into_iter();
-        state.bubbles = i.filter_map(|b| b.step(&mut state.boxes, &level.tiles)).collect();
+
+        for (index, bubble) in state.bubbles.clone().into_iter().enumerate() {
+
+            // find box intersecting with bubble
+
+            let next_pos = tile(bubble.borrow().contents.position()) + bubble.borrow().motion.change_base();
+
+            let block = if let Some((index, _block)) = state.boxes.iter().enumerate().find(|(_, o)| o.borrow().position() == screen(next_pos)) {
+                Some(state.boxes.swap_remove(index))
+            } else { None };
+
+
+            let exists = bubble.borrow_mut().step(block, &level.tiles);
+
+            if !exists {
+                state.bubbles.remove(index);
+            }
+        }
+
+        //state.bubbles = i.filter_map(|b| b.borrow_mut().step(&mut state.boxes, &level.tiles)).collect();
 
         agb::display::busy_wait_for_vblank();
         object.commit();

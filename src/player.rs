@@ -1,7 +1,10 @@
+use core::cell::RefCell;
+
 use agb::{
     display, fixnum,
     input::{self, Button},
 };
+use alloc::rc::Rc;
 
 use crate::{screen, Bubble, State, Tile, Tiles, BUBBLE};
 use fixnum::Vector2D;
@@ -73,11 +76,11 @@ impl Player {
         }
     }
 
-    pub fn input<'inp, 'oam: 'inp>(
+    pub fn input<'oam>(
         &mut self,
         input: &input::ButtonController,
-        oammanaged: &'oam display::object::OamManaged<'oam>,
-        state: &'inp mut State<'oam>,
+        oammanaged: &'oam display::object::OamManaged,
+        state: &mut State<'oam>,
         level: &Tiles,
     ) {
         // Movement
@@ -92,17 +95,17 @@ impl Player {
                 || state
                     .boxes
                     .iter()
-                    .any(|o| o.position() == screen(future_movement));
+                    .any(|o| o.borrow_mut().position() == screen(future_movement));
             if collide {
                 // agb::println!("nah");
             } else {
                 if let Some(bubble) = state
                     .bubbles
                     .iter_mut()
-                    .find(|o| o.contents.position() == screen(future_movement))
+                    .find(|o| o.borrow_mut().contents.position() == screen(future_movement))
                 {
                     agb::println!("bubel {} {}", self.movement_intent.x, self.movement_intent.y);
-                    bubble.push(self.movement_intent);
+                    bubble.borrow_mut().push(self.movement_intent);
                 }
                 self.tilepos += self.movement_intent;
                 self.move_lock = 12;
@@ -111,16 +114,9 @@ impl Player {
 
         // Bubble spawner
         if input.is_just_pressed(Button::A) {
-            let mut new_bubble = oammanaged.object_sprite(BUBBLE.sprite(0));
-            new_bubble
-                .set_position(screen(self.tilepos + self.movement_intent))
-                .show();
-            let bubble = Bubble {
-                contents: new_bubble,
-                motion: Vector2D { x: 0, y: 0 },
-                picked_up: None
-            };
-            state.bubbles.push(bubble);
+
+            let bubble = Bubble::new(screen(self.tilepos + self.movement_intent), &oammanaged);
+            state.bubbles.push(Rc::new(RefCell::new(bubble)));
         }
     }
 

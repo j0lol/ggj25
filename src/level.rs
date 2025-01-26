@@ -11,12 +11,14 @@ X             X
 XXXXXXXXXXXXXXX
 "#;
 
+use core::cell::RefCell;
+
 use crate::{screen, tile_indexer, Matrix2D, Tile, Tiles, BLOCK};
 use agb::{
     display::{object::{OamManaged, Object}, tiled::{MapLoan, RegularMap, Tiled0, VRamManager}},
     fixnum::Vector2D,
 };
-use alloc::{string::String, vec::Vec};
+use alloc::{rc::Rc, string::String, vec::Vec};
 
 // const w/o debug
 fn tile_dispatch(c: char) -> Tile {
@@ -64,7 +66,7 @@ impl Level {
         Level { tiles }
     }
 
-    pub fn make_boxes<'obj>(&self, object: &'obj OamManaged) -> Vec<Object<'obj>> {
+    pub fn make_boxes<'obj>(&self, object: &'obj OamManaged) -> Vec<Rc<RefCell<Object<'obj>>>> {
         let mut boxes = Vec::new();
 
         for (n, t) in self.tiles.internal.iter().enumerate() {
@@ -75,7 +77,7 @@ impl Level {
                 new_box
                     .set_position(screen(Vector2D::new(x as i16, y as i16)))
                     .show();
-                boxes.push(new_box);
+                boxes.push(Rc::new(RefCell::new(new_box)));
             }
         }
 
