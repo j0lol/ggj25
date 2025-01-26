@@ -11,9 +11,12 @@ X             X
 XXXXXXXXXXXXXXX
 "#;
 
-use agb::{display::object::{OamManaged, Object}, fixnum::Vector2D};
+use crate::{screen, tile_indexer, Matrix2D, Tile, Tiles, BLOCK};
+use agb::{
+    display::{object::{OamManaged, Object}, tiled::{MapLoan, RegularMap, Tiled0, VRamManager}},
+    fixnum::Vector2D,
+};
 use alloc::{string::String, vec::Vec};
-use crate::{screen, Matrix2D, Tile, Tiles, BLOCK};
 
 // const w/o debug
 fn tile_dispatch(c: char) -> Tile {
@@ -25,7 +28,7 @@ fn tile_dispatch(c: char) -> Tile {
         'b' => Tile::Block,
         c => {
             panic!("{:?}", c);
-        },
+        }
     }
 }
 
@@ -62,12 +65,11 @@ impl Level {
     }
 
     pub fn make_boxes<'obj>(&self, object: &'obj OamManaged) -> Vec<Object<'obj>> {
-
         let mut boxes = Vec::new();
 
         for (n, t) in self.tiles.internal.iter().enumerate() {
             if let Tile::Block = t {
-                let (x,y) = (n % self.tiles.width, n / self.tiles.width);
+                let (x, y) = (n % self.tiles.width, n / self.tiles.width);
 
                 let mut new_box = object.object_sprite(BLOCK.sprite(0));
                 new_box
@@ -78,5 +80,41 @@ impl Level {
         }
 
         boxes
+    }
+
+    pub fn draw<'m>(&self, vram: &mut VRamManager, bg: &mut MapLoan<'m, RegularMap>) {
+        let tileset = &crate::tiles::tiles.tiles;
+
+        for y in 0..self.tiles.height as u16 {
+            for x in 0..self.tiles.width as u16 {
+                let tile = self.tiles.get(x as usize, y as usize).unwrap();
+                let (t1, t2, t3, t4) = tile_indexer(*tile as usize, 6);
+
+                bg.set_tile(
+                    vram,
+                    (x * 2, y * 2),
+                    tileset,
+                    crate::tiles::tiles.tile_settings[t1],
+                );
+                bg.set_tile(
+                    vram,
+                    (x * 2 + 1, y * 2),
+                    tileset,
+                    crate::tiles::tiles.tile_settings[t2],
+                );
+                bg.set_tile(
+                    vram,
+                    (x * 2, y * 2 + 1),
+                    tileset,
+                    crate::tiles::tiles.tile_settings[t3],
+                );
+                bg.set_tile(
+                    vram,
+                    (x * 2 + 1, y * 2 + 1),
+                    tileset,
+                    crate::tiles::tiles.tile_settings[t4],
+                );
+            }
+        }
     }
 }
