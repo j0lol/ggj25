@@ -67,6 +67,7 @@ impl<T> Matrix2D<T> {
 }
 
 static bgm: &[u8] = include_wav!("bgm/awa.wav");
+static BGM_2: &[u8] = include_wav!("bgm/bwb.wav");
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 enum Tile {
@@ -161,7 +162,7 @@ fn main(mut gba: agb::Gba, level_num: usize) -> (agb::Gba, bool) {
     let level = level::Level::new(level_num);
 
     let mut mixer = gba.mixer.mixer(sound::mixer::Frequency::Hz18157);
-    let mut bgm_chan = SoundChannel::new_high_priority(bgm);
+    let mut bgm_chan = SoundChannel::new_high_priority(if level_num < 2 {BGM_2} else {bgm});
     bgm_chan.should_loop();
     mixer.enable();
     mixer.play_sound(bgm_chan).unwrap();
