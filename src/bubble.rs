@@ -66,17 +66,18 @@ impl<'oac> Bubble<'oac> {
                 x: self.motion.y * -1,
                 y: self.motion.x,
             };
+            let tilepos = tile(self.contents.position());
             match (
                 tiles
                     .get(
-                        tile(self.contents.position() + right.change_base()).x as usize,
-                        tile(self.contents.position() + right.change_base()).y as usize,
+                        (tilepos + right).x as usize,
+                        (tilepos + right).y as usize,
                     )
                     .unwrap(),
                 (tiles
                     .get(
-                        tile(self.contents.position() + left.change_base()).x as usize,
-                        tile(self.contents.position() + left.change_base()).y as usize,
+                        (tilepos + left).x as usize,
+                        (tilepos + left).y as usize,
                     )
                     .unwrap()),
             ) {
