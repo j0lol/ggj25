@@ -49,9 +49,7 @@ impl<'oac> Bubble<'oac> {
         if let Some(block) = block {
             // Take ownership
             match &mut self.picked_up {
-                &mut Some(_) => {
-                    false
-                }
+                &mut Some(_) => false,
                 &mut None => {
                     self.picked_up = Some(block);
                     true
@@ -69,21 +67,13 @@ impl<'oac> Bubble<'oac> {
             let tilepos = tile(self.contents.position());
             match (
                 tiles
-                    .get(
-                        (tilepos + right).x as usize,
-                        (tilepos + right).y as usize,
-                    )
+                    .get((tilepos + right).x as usize, (tilepos + right).y as usize)
                     .unwrap(),
                 (tiles
-                    .get(
-                        (tilepos + left).x as usize,
-                        (tilepos + left).y as usize,
-                    )
+                    .get((tilepos + left).x as usize, (tilepos + left).y as usize)
                     .unwrap()),
             ) {
-                (&Tile::Wall, &Tile::Wall) => {
-                    false
-                }
+                (&Tile::Wall, &Tile::Wall) => false,
                 (&Tile::Wall, _) => {
                     self.motion = left;
                     true
@@ -92,16 +82,15 @@ impl<'oac> Bubble<'oac> {
                     self.motion = right;
                     true
                 }
-                _ => {
-                    false
-                }
+                _ => false,
             }
         } else {
             self.contents.set_position(screen(next_pos));
-            self.picked_up.as_mut().inspect(|bx| {bx.borrow_mut().set_position(screen(next_pos)); ()});
+            self.picked_up.as_mut().inspect(|bx| {
+                bx.borrow_mut().set_position(screen(next_pos));
+                ()
+            });
             true
         }
     }
 }
-
-

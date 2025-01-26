@@ -176,47 +176,48 @@ fn main(mut gba: agb::Gba) -> ! {
     bg.commit(&mut vram);
     bg.set_visible(true);
 
+
     loop {
         pl.input(&input, &object, &mut state, &level.tiles);
         pl.update(&mut player);
 
-        if !state.bubbles.is_empty() {}
+        if pl.stepped {
+            let mut to_remove = Vec::new();
+            for (index, bubble) in state.bubbles.iter_mut().enumerate() {
+                // find box intersecting with bubble
 
-        let mut to_remove = Vec::new();
-        for (index, bubble) in state.bubbles.iter_mut().enumerate() {
-            // find box intersecting with bubble
+                let next_pos = tile(bubble.borrow().contents.position())
+                    + bubble.borrow().motion.change_base();
 
-            let next_pos =
-                tile(bubble.borrow().contents.position()) + bubble.borrow().motion.change_base();
+                let block = if let Some((index, _block)) = state
+                    .boxes
+                    .iter()
+                    .enumerate()
+                    .find(|(_, o)| o.borrow().position() == screen(next_pos))
+                {
+                    Some(state.boxes.swap_remove(index))
+                } else {
+                    None
+                };
 
-            let block = if let Some((index, _block)) = state
-                .boxes
-                .iter()
-                .enumerate()
-                .find(|(_, o)| o.borrow().position() == screen(next_pos))
-            {
-                Some(state.boxes.swap_remove(index))
-            } else {
-                None
-            };
+                let exists = bubble.borrow_mut().step(block, &level.tiles);
 
-            let exists = bubble.borrow_mut().step(block, &level.tiles);
-
-            if !exists {
-                agb::println!("NOTEXISTS {}", index);
-                to_remove.push(index);
+                if !exists {
+                    agb::println!("NOTEXISTS {}", index);
+                    to_remove.push(index);
+                }
             }
+            to_remove.sort();
+            to_remove.reverse();
+            to_remove.iter().for_each(|index| {
+                agb::println!("{}", index);
+                let bubel = state.bubbles.swap_remove(*index);
+                if let Some(ref dropped) = bubel.clone().borrow().picked_up {
+                    state.boxes.push(dropped.clone());
+                }
+                ()
+            });
         }
-        to_remove.sort();
-        to_remove.reverse();
-        to_remove.iter().for_each(|index| {
-            agb::println!("{}", index);
-            let bubel = state.bubbles.swap_remove(*index);
-            if let Some(ref dropped) = bubel.clone().borrow().picked_up {
-                state.boxes.push(dropped.clone());
-            }
-            ()
-        });
 
         //state.bubbles = i.filter_map(|b| b.borrow_mut().step(&mut state.boxes, &level.tiles)).collect();
 

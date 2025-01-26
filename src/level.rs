@@ -12,19 +12,19 @@ XXXXXXXXXXXXXXX
 "#;
 
 pub const LEVELS: [&'static str; 2] = [
-r#"
+    r#"
 XXXXXXXXXXXXXXX
 XXXXXXXXXXXXXXX
 XXXXXXXXXXXXXXX
-X             X
+X            XX
 X p  b       tX
-X             X
+XX           XX
 XXXXXXXXXXXXXXX
 XXXXXXXXXXXXXXX
 XXXXXXXXXXXXXXX
 XXXXXXXXXXXXXXX
 "#,
-r#"
+    r#"
 XXXXXXXXXXXXXXX
 X    tX       X
 X  XXXX       X
@@ -38,14 +38,14 @@ XXXXXXXXXXXXXXX
 "#,
 ];
 
-
-
-
 use core::cell::RefCell;
 
 use crate::{screen, tile_indexer, Matrix2D, Tile, Tiles, BLOCK};
 use agb::{
-    display::{object::{OamManaged, Object}, tiled::{MapLoan, RegularMap, Tiled0, VRamManager}},
+    display::{
+        object::{OamManaged, Object},
+        tiled::{MapLoan, RegularMap, Tiled0, VRamManager},
+    },
     fixnum::Vector2D,
 };
 use alloc::{rc::Rc, string::String, vec::Vec};

@@ -13,6 +13,7 @@ pub struct Player {
     pub tilepos: fixnum::Vector2D<i16>,
     pub movement_intent: fixnum::Vector2D<i16>,
     pub move_lock: u16,
+    pub stepped: bool,
 }
 
 const fn ddispatch(b: Button) -> Vector2D<i16> {
@@ -73,6 +74,7 @@ impl Player {
             tilepos: fixnum::Vector2D::new(x, y),
             movement_intent: fixnum::Vector2D::new(0, 0),
             move_lock: 0,
+            stepped: false,
         }
     }
 
@@ -83,8 +85,10 @@ impl Player {
         state: &mut State<'oam>,
         level: &Tiles,
     ) {
+        self.stepped = false;
         // Movement
         if let Some(intent) = direction_dispatch(input, &mut self.move_lock) {
+            self.stepped = true;
             self.movement_intent = intent;
 
             let future_movement = self.tilepos + self.movement_intent;
@@ -104,7 +108,6 @@ impl Player {
                     .iter_mut()
                     .find(|o| o.borrow_mut().contents.position() == screen(future_movement))
                 {
-                    agb::println!("bubel {} {}", self.movement_intent.x, self.movement_intent.y);
                     bubble.borrow_mut().push(self.movement_intent);
                 }
                 self.tilepos += self.movement_intent;
@@ -114,11 +117,27 @@ impl Player {
 
         // Bubble spawner
         if input.is_just_pressed(Button::A) {
-            if state.boxes.iter().any(|o| tile(o.borrow_mut().position()) == self.movement_intent) {
-                return
+            self.stepped = true;
+
+            let intent = if self.movement_intent == Vector2D::new(0, 0) {
+                Vector2D::new(1, 0)
+            } else {
+                self.movement_intent
+            };
+
+            if state
+                .boxes
+                .iter()
+                .any(|o| tile(o.borrow_mut().position()) == self.tilepos + intent)
+            {
+                return;
             }
-            let bubble = Bubble::new(screen(self.tilepos + self.movement_intent), &oammanaged);
+            let bubble = Bubble::new(screen(self.tilepos + intent), &oammanaged);
             state.bubbles.push(Rc::new(RefCell::new(bubble)));
+        }
+
+        if input.is_just_pressed(Button::B) {
+            self.stepped = true
         }
     }
 
