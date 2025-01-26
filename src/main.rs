@@ -148,7 +148,7 @@ fn main(mut gba: agb::Gba) -> ! {
 
     let mut input = agb::input::ButtonController::new();
 
-    let level = level::Level::new();
+    let level = level::Level::new(0);
 
     let (px, py) = level::player_spawn(&level.tiles);
 

@@ -11,6 +11,36 @@ X             X
 XXXXXXXXXXXXXXX
 "#;
 
+pub const LEVELS: [&'static str; 2] = [
+r#"
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+X             X
+X p  b       tX
+X             X
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+"#,
+r#"
+XXXXXXXXXXXXXXX
+X    tX       X
+X  XXXX       X
+X             X
+X             X
+X    b        X
+X      p      X
+X             X
+X             X
+XXXXXXXXXXXXXXX
+"#,
+];
+
+
+
+
 use core::cell::RefCell;
 
 use crate::{screen, tile_indexer, Matrix2D, Tile, Tiles, BLOCK};
@@ -61,8 +91,8 @@ pub struct Level {
 }
 
 impl Level {
-    pub fn new() -> Self {
-        let tiles = level_parse(LEVEL);
+    pub fn new(n: usize) -> Self {
+        let tiles = level_parse(LEVELS[n]);
         Level { tiles }
     }
 
