@@ -63,7 +63,6 @@ impl<T> Matrix2D<T> {
     }
 }
 
-
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 enum Tile {
     Empty,
@@ -92,7 +91,7 @@ fn screen(v2: fixnum::Vector2D<i16>) -> fixnum::Vector2D<i32> {
     (v2 * TILE_SIZE as i16).change_base()
 }
 fn tile(v2: fixnum::Vector2D<i32>) -> fixnum::Vector2D<i16> {
-    let Vector2D {x, y} = v2;
+    let Vector2D { x, y } = v2;
     Vector2D::new(x as i16, y as i16) / TILE_SIZE as i16
 }
 
@@ -102,11 +101,10 @@ struct State<'a> {
 }
 
 impl<'a> State<'a> {
-
     fn new() -> Self {
         State::<'a> {
             boxes: Vec::new(),
-            bubbles: Vec::new()
+            bubbles: Vec::new(),
         }
     }
 }
@@ -181,30 +179,40 @@ fn main(mut gba: agb::Gba) -> ! {
         pl.input(&input, &object, &mut state, &level.tiles);
         pl.update(&mut player);
 
-        if !state.bubbles.is_empty() {
-            agb::println!("{:?}", state.bubbles[0].borrow().contents.position());
-        }
-
+        if !state.bubbles.is_empty() {}
 
         let mut to_remove = Vec::new();
         for (index, bubble) in state.bubbles.iter_mut().enumerate() {
-
             // find box intersecting with bubble
 
-            let next_pos = tile(bubble.borrow().contents.position()) + bubble.borrow().motion.change_base();
+            let next_pos =
+                tile(bubble.borrow().contents.position()) + bubble.borrow().motion.change_base();
 
-            let block = if let Some((index, _block)) = state.boxes.iter().enumerate().find(|(_, o)| o.borrow().position() == screen(next_pos)) {
+            let block = if let Some((index, _block)) = state
+                .boxes
+                .iter()
+                .enumerate()
+                .find(|(_, o)| o.borrow().position() == screen(next_pos))
+            {
                 Some(state.boxes.swap_remove(index))
-            } else { None };
-
+            } else {
+                None
+            };
 
             let exists = bubble.borrow_mut().step(block, &level.tiles);
 
             if !exists {
+                agb::println!("NOTEXISTS {}", index);
                 to_remove.push(index);
             }
         }
-        to_remove.sort(); to_remove.reverse(); to_remove.iter().for_each(|index| {state.bubbles.swap_remove(*index); ()});
+        to_remove.sort();
+        to_remove.reverse();
+        to_remove.iter().for_each(|index| {
+            agb::println!("{}", index);
+            state.bubbles.swap_remove(*index);
+            ()
+        });
 
         //state.bubbles = i.filter_map(|b| b.borrow_mut().step(&mut state.boxes, &level.tiles)).collect();
 
