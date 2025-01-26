@@ -181,6 +181,11 @@ fn main(mut gba: agb::Gba) -> ! {
         pl.input(&input, &object, &mut state, &level.tiles);
         pl.update(&mut player);
 
+        if !state.bubbles.is_empty() {
+            agb::println!("{:?}", state.bubbles[0].borrow().contents.position());
+        }
+
+
         let mut to_remove = Vec::new();
         for (index, bubble) in state.bubbles.iter_mut().enumerate() {
 
@@ -199,7 +204,7 @@ fn main(mut gba: agb::Gba) -> ! {
                 to_remove.push(index);
             }
         }
-        to_remove.sort(); to_remove.reverse(); to_remove.iter().for_each(|index| {state.bubbles.swap_remove(*index); ()}); 
+        to_remove.sort(); to_remove.reverse(); to_remove.iter().for_each(|index| {state.bubbles.swap_remove(*index); ()});
 
         //state.bubbles = i.filter_map(|b| b.borrow_mut().step(&mut state.boxes, &level.tiles)).collect();
 
