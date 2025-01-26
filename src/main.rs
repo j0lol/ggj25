@@ -133,7 +133,12 @@ fn titlescreen(mut gba: agb::Gba) -> ! {
 
     loop {
         if (input.is_just_pressed(Button::A | Button::START)) {
-            main(gba)
+            let mut level = 0;
+            loop {
+
+                gba = main(gba, level);
+                level += 1;
+            }
         }
 
         agb::display::busy_wait_for_vblank();
@@ -141,14 +146,14 @@ fn titlescreen(mut gba: agb::Gba) -> ! {
     }
 }
 
-fn main(mut gba: agb::Gba) -> ! {
+fn main(mut gba: agb::Gba, level_num: usize) -> agb::Gba {
     let object: display::object::OamManaged = gba.display.object.get_managed();
 
     let mut player = object.object_sprite(PLAYER.sprite(0));
 
     let mut input = agb::input::ButtonController::new();
 
-    let level = level::Level::new(0);
+    let level = level::Level::new(level_num);
 
     let (px, py) = level::player_spawn(&level.tiles);
 
@@ -219,10 +224,19 @@ fn main(mut gba: agb::Gba) -> ! {
             });
         }
 
+
         //state.bubbles = i.filter_map(|b| b.borrow_mut().step(&mut state.boxes, &level.tiles)).collect();
 
         agb::display::busy_wait_for_vblank();
         object.commit();
         input.update();
+
+        // yuo win!;
+        if input.is_just_pressed(Button::START) {
+            drop(player);
+            drop(state);
+            drop(bg);
+            return gba;
+        }
     }
 }
