@@ -138,7 +138,7 @@ fn titlescreen(mut gba: agb::Gba) -> ! {
 
     loop {
         if (input.is_just_pressed(Button::A | Button::START)) {
-            let mut level = 3;
+            let mut level = 0;
             loop {
                 let n = main(gba, level);
                 gba = n.0;
