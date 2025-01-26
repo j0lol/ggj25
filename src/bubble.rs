@@ -43,16 +43,18 @@ impl<'oac> Bubble<'oac> {
 
     /// => Some(self) = bubble should still exist
     /// => None = bubble popped. maybe have a little pop animation?
-    pub fn step(&mut self, block: Option<Rc<RefCell<Object<'oac>>>>, tiles: &Tiles) -> bool {
+    pub fn step(&mut self, block: Option<Rc<RefCell<Object<'oac>>>>, tiles: &Tiles) -> (Option<Rc<RefCell<Object<'oac>>>>, bool) {
         let next_pos = tile(self.contents.position()) + self.motion;
 
         if let Some(block) = block {
             // Take ownership
             match &mut self.picked_up {
-                &mut Some(_) => false,
+                &mut Some(_) => {
+                    (Some(block), false)
+                },
                 &mut None => {
                     self.picked_up = Some(block);
-                    true
+                    (None, true)
                 }
             }
         } else if tiles.get(next_pos.x as usize, next_pos.y as usize).unwrap() == &Tile::Wall {
@@ -73,16 +75,16 @@ impl<'oac> Bubble<'oac> {
                     .get((tilepos + left).x as usize, (tilepos + left).y as usize)
                     .unwrap()),
             ) {
-                (&Tile::Wall, &Tile::Wall) => false,
+                (&Tile::Wall, &Tile::Wall) => (None, false),
                 (&Tile::Wall, _) => {
                     self.motion = left;
-                    true
+                    (None, true)
                 }
                 (_, &Tile::Wall) => {
                     self.motion = right;
-                    true
+                    (None, true)
                 }
-                _ => false,
+                _ => (None, false),
             }
         } else {
             self.contents.set_position(screen(next_pos));
@@ -90,7 +92,7 @@ impl<'oac> Bubble<'oac> {
                 bx.borrow_mut().set_position(screen(next_pos));
                 ()
             });
-            true
+            (None, true)
         }
     }
 }

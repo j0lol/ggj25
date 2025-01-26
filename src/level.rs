@@ -11,7 +11,7 @@ X             X
 XXXXXXXXXXXXXXX
 "#;
 
-pub const LEVELS: [&'static str; 2] = [
+pub const LEVELS: [&'static str; 3] = [
     r#"
 XXXXXXXXXXXXXXX
 XXXXXXXXXXXXXXX
@@ -34,6 +34,18 @@ X    b        X
 X      p      X
 X             X
 X             X
+XXXXXXXXXXXXXXX
+"#,
+    r#"
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+X        X t  X
+X  p  b  X    X
+X     b  X    X
+X             X
+Xt            X
+XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
 XXXXXXXXXXXXXXX
 "#,
 ];
@@ -112,6 +124,18 @@ impl Level {
         }
 
         boxes
+    }
+
+    pub fn win_tile(&self) -> Vec<Vector2D<i16>> {
+        let mut vec  = Vec::new();
+        for (n, t) in self.tiles.internal.iter().enumerate() {
+            if let Tile::Target = t {
+                let (x, y) = (n % self.tiles.width, n / self.tiles.width);
+                vec.push( (x as i16, y as i16).into() );
+            }
+        };
+
+        vec
     }
 
     pub fn draw<'m>(&self, vram: &mut VRamManager, bg: &mut MapLoan<'m, RegularMap>) {

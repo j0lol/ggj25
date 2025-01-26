@@ -139,9 +139,10 @@ fn titlescreen(mut gba: agb::Gba) -> ! {
         if (input.is_just_pressed(Button::A | Button::START)) {
             let mut level = 0;
             loop {
-
-                gba = main(gba, level);
-                level += 1;
+                let n = main(gba, level);
+                gba = n.0;
+                let win = n.1;
+                level += win as usize;
             }
         }
 
@@ -150,7 +151,7 @@ fn titlescreen(mut gba: agb::Gba) -> ! {
     }
 }
 
-fn main(mut gba: agb::Gba, level_num: usize) -> agb::Gba {
+fn main(mut gba: agb::Gba, level_num: usize) -> (agb::Gba, bool) {
     let object: display::object::OamManaged = gba.display.object.get_managed();
 
     let mut player = object.object_sprite(PLAYER.sprite(0));
@@ -190,7 +191,6 @@ fn main(mut gba: agb::Gba, level_num: usize) -> agb::Gba {
     bg.commit(&mut vram);
     bg.set_visible(true);
 
-
     loop {
         pl.input(&input, &object, &mut state, &level.tiles);
         pl.update(&mut player);
@@ -214,8 +214,11 @@ fn main(mut gba: agb::Gba, level_num: usize) -> agb::Gba {
                     None
                 };
 
-                let exists = bubble.borrow_mut().step(block, &level.tiles);
+                let (block, exists) = bubble.borrow_mut().step(block, &level.tiles);
 
+                if let Some(block) = block {
+                    state.boxes.push(block);
+                }
                 if !exists {
                     agb::println!("NOTEXISTS {}", index);
                     to_remove.push(index);
@@ -233,8 +236,15 @@ fn main(mut gba: agb::Gba, level_num: usize) -> agb::Gba {
             });
         }
 
+        let wintile = level.win_tile();
 
-        //state.bubbles = i.filter_map(|b| b.borrow_mut().step(&mut state.boxes, &level.tiles)).collect();
+        let win = state
+            .boxes
+            .iter()
+            .all(|o| wintile.contains(&tile(o.borrow_mut().position())) )
+
+            && state.bubbles.is_empty();
+
         mixer.frame();
 
         agb::display::busy_wait_for_vblank();
@@ -242,11 +252,17 @@ fn main(mut gba: agb::Gba, level_num: usize) -> agb::Gba {
         input.update();
 
         // yuo win!;
+        if win {
+            drop(player);
+            drop(state);
+            drop(bg);
+            return (gba, true);
+        }
         if input.is_just_pressed(Button::START) {
             drop(player);
             drop(state);
             drop(bg);
-            return gba;
+            return (gba, false);
         }
     }
 }
