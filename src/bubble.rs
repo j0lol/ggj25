@@ -97,6 +97,7 @@ impl<'oac> Bubble<'oac> {
             }
         } else {
             self.contents.set_position(screen(next_pos));
+            self.picked_up.as_mut().inspect(|bx| {bx.borrow_mut().set_position(screen(next_pos)); ()});
             true
         }
     }
