@@ -43,7 +43,7 @@ impl<'oac> Bubble<'oac> {
 
     /// => Some(self) = bubble should still exist
     /// => None = bubble popped. maybe have a little pop animation?
-    pub fn step(&mut self, block: Option<Rc<RefCell<Object<'oac>>>>, tiles: &Tiles) -> (Option<Rc<RefCell<Object<'oac>>>>, bool) {
+    pub fn step(&mut self, block: Option<Rc<RefCell<Object<'oac>>>>, tiles: &Tiles, (l, r): (bool, bool)) -> (Option<Rc<RefCell<Object<'oac>>>>, bool) {
         let next_pos = tile(self.contents.position()) + self.motion;
 
         if let Some(block) = block {
@@ -67,20 +67,20 @@ impl<'oac> Bubble<'oac> {
                 y: self.motion.x,
             };
             let tilepos = tile(self.contents.position());
-            match (
+            match /* (
                 tiles
                     .get((tilepos + right).x as usize, (tilepos + right).y as usize)
                     .unwrap(),
                 (tiles
                     .get((tilepos + left).x as usize, (tilepos + left).y as usize)
                     .unwrap()),
-            ) {
-                (&Tile::Wall, &Tile::Wall) => (None, false),
-                (&Tile::Wall, _) => {
+            ) */ (l, r) {
+                (true, true) => (None, false),
+                (false, true) => {
                     self.motion = left;
                     (None, true)
                 }
-                (_, &Tile::Wall) => {
+                (true, false) => {
                     self.motion = right;
                     (None, true)
                 }

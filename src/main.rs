@@ -199,6 +199,8 @@ fn main(mut gba: agb::Gba, level_num: usize) -> (agb::Gba, bool) {
         if pl.stepped {
             let mut to_remove = Vec::new();
             for (index, bubble) in state.bubbles.iter_mut().enumerate() {
+
+                // let bubble: &mut Rc<RefCell<Bubble>> = bubble;
                 // find box intersecting with bubble
 
                 let next_pos = tile(bubble.borrow().contents.position())
@@ -214,8 +216,27 @@ fn main(mut gba: agb::Gba, level_num: usize) -> (agb::Gba, bool) {
                 } else {
                     None
                 };
-
-                let (block, exists) = bubble.borrow_mut().step(block, &level.tiles);
+                let tilepos = tile(bubble.borrow().contents.position());
+                let motion = bubble.borrow().motion;
+                let right = Vector2D {
+                    x: motion.y,
+                    y: motion.x * -1,
+                };
+                let left = Vector2D {
+                    x: motion.y * -1,
+                    y: motion.x,
+                };
+                let (wall_right, wall_left) = (&level.tiles
+                    .get((tilepos + right).x as usize, (tilepos + right).y as usize)
+                    .unwrap() == &&Tile::Wall,
+                (&level.tiles
+                    .get((tilepos + left).x as usize, (tilepos + left).y as usize)
+                    .unwrap()) == &&Tile::Wall);
+                let (crate_right, crate_left) = (
+                    state.boxes.iter().any(|b| tile(b.borrow().position()) == tilepos + right),
+                    state.boxes.iter().any(|b| tile(b.borrow().position()) == tilepos + left));
+                let (on_left, on_right) = (wall_left || crate_left, wall_right || crate_right);
+                let (block, exists) = bubble.borrow_mut().step(block, &level.tiles, (on_left, on_right));
 
                 if let Some(block) = block {
                     state.boxes.push(block);
