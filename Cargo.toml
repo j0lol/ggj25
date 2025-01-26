@@ -8,6 +8,7 @@ edition = "2021"
 
 [dependencies]
 agb = "0.21.1"
+agb_tracker = { version = "0.21.1", features = ["midi"] }
 
 [profile.dev]
 opt-level = 3

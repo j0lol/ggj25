@@ -12,6 +12,7 @@ use core::cell::RefCell;
 use agb::display::tiled::TiledMap;
 use agb::input::Button;
 use agb::*;
+use agb_tracker::{include_midi, Track};
 use alloc::borrow::ToOwned;
 use alloc::rc::Rc;
 use alloc::vec::Vec;
@@ -23,6 +24,7 @@ use display::{
     Priority,
 };
 use fixnum::Vector2D;
+use sound::mixer::SoundChannel;
 
 mod bubble;
 mod level;
@@ -63,6 +65,8 @@ impl<T> Matrix2D<T> {
         }
     }
 }
+
+static bgm: &[u8] = include_wav!("bgm/awa.wav");
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 enum Tile {
@@ -155,6 +159,11 @@ fn main(mut gba: agb::Gba, level_num: usize) -> agb::Gba {
 
     let level = level::Level::new(level_num);
 
+    let mut mixer = gba.mixer.mixer(sound::mixer::Frequency::Hz18157);
+    let mut bgm_chan = SoundChannel::new_high_priority(bgm);
+    bgm_chan.should_loop();
+    let _ = mixer.play_sound(bgm_chan);
+
     let (px, py) = level::player_spawn(&level.tiles);
 
     let mut pl = player::Player::new(px as _, py as _);
@@ -226,6 +235,7 @@ fn main(mut gba: agb::Gba, level_num: usize) -> agb::Gba {
 
 
         //state.bubbles = i.filter_map(|b| b.borrow_mut().step(&mut state.boxes, &level.tiles)).collect();
+        mixer.frame();
 
         agb::display::busy_wait_for_vblank();
         object.commit();
