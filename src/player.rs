@@ -114,7 +114,9 @@ impl Player {
 
         // Bubble spawner
         if input.is_just_pressed(Button::A) {
-
+            if state.boxes.iter().any(|o| o.borrow_mut().position() == screen(self.movement_intent)) {
+                return
+            }
             let bubble = Bubble::new(screen(self.tilepos + self.movement_intent), &oammanaged);
             state.bubbles.push(Rc::new(RefCell::new(bubble)));
         }
