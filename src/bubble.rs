@@ -16,6 +16,8 @@ impl<'oac> Bubble<'oac> {
         self.motion = direction * 16;
     }
 
+    /// => Some(self) = bubble should still exist
+    /// => None = bubble popped. maybe have a little pop animation?
     pub fn step(mut self, state : &'oac mut State<'oac>, tiles : Tiles) -> Option<Bubble<'oac>> {
         let next_pos = tile(self.contents.position()) + self.motion.change_base();
         if let Some((index, _block)) = state.boxes.iter().enumerate().find(|(_, o)| o.position() == screen(next_pos)) {
@@ -48,7 +50,13 @@ impl<'oac> Bubble<'oac> {
                 }
                 _ => Some(self)
             }
-        } else {None}
+        } else {
+            self.contents.set_position(self.contents.position() + (self.motion * 16).change_base());
+            if let Some(ref mut picked) = self.picked_up {
+                picked.set_position(self.contents.position());
+            }
+            Some(self)
+        }
     }
 }
 
