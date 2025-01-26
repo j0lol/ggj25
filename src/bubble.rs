@@ -8,7 +8,7 @@ pub struct Bubble<'oac> {
     // id : u8,
     pub motion : Vector2D<i16>,
     pub contents : Object<'oac>,
-    pub picked_up : Option<Weak<Object<'oac>>>,
+    pub picked_up : Option<Rc<RefCell<Object<'oac>>>>,
 }
 
 impl<'oac> Bubble<'oac> {
@@ -36,16 +36,21 @@ impl<'oac> Bubble<'oac> {
 
     /// => Some(self) = bubble should still exist
     /// => None = bubble popped. maybe have a little pop animation?
-    pub fn step(&mut self, block: Option<Rc<RefCell<Object>>>, tiles : &Tiles) -> bool {
+    pub fn step(&mut self, block: Option<Rc<RefCell<Object<'oac>>>>, tiles : &Tiles) -> bool {
         let next_pos = tile(self.contents.position()) + self.motion.change_base();
 
         if let Some(block) = block {
             // Take ownership
-        } else {
+            match &mut self.picked_up {
+                &mut Some(ref mut  carrying) => {
+                    self.picked_up = None; false
+                } 
+                &mut None => {
+                    self.picked_up = Some(block); true
+                }
+            }
+                    
 
-        }
-
-        todo!();
 
 //         if let Some((index, _block)) = boxes.iter().enumerate().find(|(_, o)| o.position() == screen(next_pos)) {
 //             match &mut self.picked_up {
@@ -63,36 +68,35 @@ impl<'oac> Bubble<'oac> {
 //                     None
 //                 }
 //             }
-//         } else if tiles.get(tile(next_pos.change_base()).x as usize, tile(next_pos.change_base()).y as usize).unwrap() == &Tile::Wall {
-//             let right = Vector2D {x: self.motion.y, y: self.motion.x * -1};
-//             let left = Vector2D {x: self.motion.y * -1, y: self.motion.x};
-//             match (tiles.get(tile(self.contents.position() + right.change_base()).x as usize, tile(self.contents.position() + right.change_base()).y as usize).unwrap(),
-//                 (tiles.get(tile(self.contents.position() + left.change_base()).x as usize, tile(self.contents.position() + left.change_base()).y as usize).unwrap())) {
-//                 (&Tile::Wall, &Tile::Wall) => {
-//                     if let Some(weak) = self.picked_up {
-//                         //weak.upgrade().expect("not strong").show();
-//                         //boxes.push(self.picked_up.take().unwrap());
-//                     }
-//                     None
-//                 }
-//                 (&Tile::Wall, _) => {
-//                     self.motion = left;
-//                     Some(self)
-//                 }
-//                 (_, &Tile::Wall) => {
-//                     self.motion = right;
-//                     Some(self)
-//                 }
-//                 _ => Some(self)
-//             }
-//         } else {
-//             self.contents.set_position(self.contents.position() + (self.motion * 16).change_base());
-//             if let Some(ref mut picked) = self.picked_up {
-//                 // oh no!
-//                 // picked.set_position(self.contents.position());
-//             }
-//             Some(self)
-//         }
+         } else if tiles.get(tile(next_pos.change_base()).x as usize, tile(next_pos.change_base()).y as usize).unwrap() == &Tile::Wall {
+             let right = Vector2D {x: self.motion.y, y: self.motion.x * -1};
+             let left = Vector2D {x: self.motion.y * -1, y: self.motion.x};
+             match (tiles.get(tile(self.contents.position() + right.change_base()).x as usize, tile(self.contents.position() + right.change_base()).y as usize).unwrap(),
+                 (tiles.get(tile(self.contents.position() + left.change_base()).x as usize, tile(self.contents.position() + left.change_base()).y as usize).unwrap())) {
+                 (&Tile::Wall, &Tile::Wall) => {
+                     if let Some(weak) = &mut self.picked_up {
+                         self.picked_up = None; 
+                     }
+                     false
+                 }
+                 (&Tile::Wall, _) => {
+                     self.motion = left;
+                     true
+                 }
+                 (_, &Tile::Wall) => {
+                     self.motion = right;
+                     true
+                 }
+                 _ => true
+             }
+         } else {
+             self.contents.set_position(self.contents.position() + (self.motion * 16).change_base());
+             if let Some(ref mut picked) = self.picked_up {
+                 // oh no!
+                 // picked.set_position(self.contents.position());
+             }
+             true
+         }
     }
 }
 
