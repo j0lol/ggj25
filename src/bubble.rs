@@ -50,7 +50,6 @@ impl<'oac> Bubble<'oac> {
             // Take ownership
             match &mut self.picked_up {
                 &mut Some(_) => {
-                    self.picked_up = None;
                     false
                 }
                 &mut None => {
@@ -82,9 +81,6 @@ impl<'oac> Bubble<'oac> {
                     .unwrap()),
             ) {
                 (&Tile::Wall, &Tile::Wall) => {
-                    if let Some(_) = &mut self.picked_up {
-                        self.picked_up = None;
-                    }
                     false
                 }
                 (&Tile::Wall, _) => {
@@ -95,7 +91,9 @@ impl<'oac> Bubble<'oac> {
                     self.motion = right;
                     true
                 }
-                _ => true,
+                _ => {
+                    false
+                }
             }
         } else {
             self.contents.set_position(screen(next_pos));

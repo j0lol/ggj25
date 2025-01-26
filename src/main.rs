@@ -12,6 +12,7 @@ use core::cell::RefCell;
 use agb::display::tiled::TiledMap;
 use agb::input::Button;
 use agb::*;
+use alloc::borrow::ToOwned;
 use alloc::rc::Rc;
 use alloc::vec::Vec;
 use bubble::Bubble;
@@ -210,7 +211,10 @@ fn main(mut gba: agb::Gba) -> ! {
         to_remove.reverse();
         to_remove.iter().for_each(|index| {
             agb::println!("{}", index);
-            state.bubbles.swap_remove(*index);
+            let bubel = state.bubbles.swap_remove(*index);
+            if let Some(ref dropped) = bubel.clone().borrow().picked_up {
+                state.boxes.push(dropped.clone());
+            }
             ()
         });
 
