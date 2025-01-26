@@ -11,7 +11,7 @@ X             X
 XXXXXXXXXXXXXXX
 "#;
 
-pub const LEVELS: [&'static str; 3] = [
+pub const LEVELS: [&'static str; 4] = [
     r#"
 XXXXXXXXXXXXXXX
 XXXXXXXXXXXXXXX
@@ -39,13 +39,25 @@ XXXXXXXXXXXXXXX
     r#"
 XXXXXXXXXXXXXXX
 XXXXXXXXXXXXXXX
-X        X t  X
-X  p  b  X    X
+X        Xt   X
+X  p  b  XX   X
 X     b  X    X
-X             X
+XXX           X
 Xt            X
 XXXXXXXXXXXXXXX
 XXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXX
+"#,
+    r#"
+XXXXXXXXXXXXXXX
+X           XtX
+X X X X     XXX
+X  X X  X     X
+X       X     X
+X   p   X  X  X
+X         X X X
+X     b   X X X
+X             X
 XXXXXXXXXXXXXXX
 "#,
 ];

@@ -163,7 +163,8 @@ fn main(mut gba: agb::Gba, level_num: usize) -> (agb::Gba, bool) {
     let mut mixer = gba.mixer.mixer(sound::mixer::Frequency::Hz18157);
     let mut bgm_chan = SoundChannel::new_high_priority(bgm);
     bgm_chan.should_loop();
-    let _ = mixer.play_sound(bgm_chan);
+    mixer.enable();
+    mixer.play_sound(bgm_chan).unwrap();
 
     let (px, py) = level::player_spawn(&level.tiles);
 
