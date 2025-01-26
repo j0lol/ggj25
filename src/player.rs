@@ -73,7 +73,7 @@ impl Player {
             new_bubble
                 .set_position(screen(self.tilepos + self.movement_intent))
                 .show();
-            let bubble = Bubble {contents : new_bubble, motion: Vector2D {x: 0, y: 0}};
+            let bubble = Bubble {contents : new_bubble, motion: Vector2D {x: 0, y: 0}, picked_up: None};
             state.bubbles.push(bubble);
         }
     }

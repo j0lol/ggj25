@@ -60,7 +60,8 @@ impl<T> Matrix2D<T> {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 enum Tile {
     Empty,
     Wall,
