@@ -181,7 +181,8 @@ fn main(mut gba: agb::Gba) -> ! {
         pl.input(&input, &object, &mut state, &level.tiles);
         pl.update(&mut player);
 
-        for (index, bubble) in state.bubbles.clone().into_iter().enumerate() {
+        let mut to_remove = Vec::new();
+        for (index, bubble) in state.bubbles.iter_mut().enumerate() {
 
             // find box intersecting with bubble
 
@@ -195,9 +196,10 @@ fn main(mut gba: agb::Gba) -> ! {
             let exists = bubble.borrow_mut().step(block, &level.tiles);
 
             if !exists {
-                state.bubbles.remove(index);
+                to_remove.push(index);
             }
         }
+        to_remove.sort(); to_remove.reverse(); to_remove.iter().for_each(|index| {state.bubbles.swap_remove(*index); ()}); 
 
         //state.bubbles = i.filter_map(|b| b.borrow_mut().step(&mut state.boxes, &level.tiles)).collect();
 

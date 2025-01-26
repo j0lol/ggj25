@@ -40,6 +40,7 @@ impl<'oac> Bubble<'oac> {
         let next_pos = tile(self.contents.position()) + self.motion.change_base();
 
         if let Some(block) = block {
+            agb::println!("big chungus");
             // Take ownership
             match &mut self.picked_up {
                 &mut Some(ref mut  carrying) => {
@@ -68,7 +69,8 @@ impl<'oac> Bubble<'oac> {
 //                     None
 //                 }
 //             }
-         } else if tiles.get(tile(next_pos.change_base()).x as usize, tile(next_pos.change_base()).y as usize).unwrap() == &Tile::Wall {
+         } else if tiles.get(next_pos.x as usize, next_pos.y as usize).unwrap() == &Tile::Wall {
+             agb::println!("youre breathtaking");
              let right = Vector2D {x: self.motion.y, y: self.motion.x * -1};
              let left = Vector2D {x: self.motion.y * -1, y: self.motion.x};
              match (tiles.get(tile(self.contents.position() + right.change_base()).x as usize, tile(self.contents.position() + right.change_base()).y as usize).unwrap(),
@@ -90,6 +92,7 @@ impl<'oac> Bubble<'oac> {
                  _ => true
              }
          } else {
+             agb::println!("akjdsfhkajsh");
              self.contents.set_position(self.contents.position() + (self.motion * 16).change_base());
              if let Some(ref mut picked) = self.picked_up {
                  // oh no!
