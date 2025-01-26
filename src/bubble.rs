@@ -1,5 +1,6 @@
 use crate::{screen, tile, Matrix2D, State, Tile, Tiles};
 use agb::{display::object::Object, fixnum::Vector2D};
+use alloc::vec::Vec;
 
 pub struct Bubble<'oac> {
     // id : u8,
@@ -14,19 +15,20 @@ impl<'oac> Bubble<'oac> {
             unreachable!();
         }
         self.motion = direction * 16;
+        agb::println!("bubel in motion {} {}", self.motion.x, self.motion.y);
     }
 
     /// => Some(self) = bubble should still exist
     /// => None = bubble popped. maybe have a little pop animation?
-    pub fn step(mut self, state : &'oac mut State<'oac>, tiles : Tiles) -> Option<Bubble<'oac>> {
+    pub fn step(mut self, boxes : &'oac mut Vec<Object<'oac>>, tiles : &Tiles) -> Option<Bubble<'oac>> {
         let next_pos = tile(self.contents.position()) + self.motion.change_base();
-        if let Some((index, _block)) = state.boxes.iter().enumerate().find(|(_, o)| o.position() == screen(next_pos)) {
+        if let Some((index, _block)) = boxes.iter().enumerate().find(|(_, o)| o.position() == screen(next_pos)) {
             match &mut self.picked_up {
                 None => {
-                    self.picked_up = Some(state.boxes.swap_remove(index)); Some(self)
+                    self.picked_up = Some(boxes.swap_remove(index)); Some(self)
                 }
                 Some(_) => {
-                    state.boxes.push(self.picked_up.take().unwrap()); None
+                    boxes.push(self.picked_up.take().unwrap()); None
                 }
             }
         } else if tiles.get(tile(next_pos.change_base()).x as usize, tile(next_pos.change_base()).y as usize).unwrap() == &Tile::Wall {
@@ -36,7 +38,7 @@ impl<'oac> Bubble<'oac> {
                 (tiles.get(tile(self.contents.position() + left.change_base()).x as usize, tile(self.contents.position() + left.change_base()).y as usize).unwrap())) {
                 (&Tile::Wall, &Tile::Wall) => {
                     if let Some(_) = self.picked_up {
-                        state.boxes.push(self.picked_up.take().unwrap()); 
+                        boxes.push(self.picked_up.take().unwrap()); 
                     }
                     None
                 }

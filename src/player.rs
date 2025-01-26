@@ -73,11 +73,11 @@ impl Player {
         }
     }
 
-    pub fn input<'oam>(
+    pub fn input<'inp, 'oam: 'inp>(
         &mut self,
         input: &input::ButtonController,
         oammanaged: &'oam display::object::OamManaged<'oam>,
-        state: &mut State<'oam>,
+        state: &'inp mut State<'oam>,
         level: &Tiles,
     ) {
         // Movement
@@ -94,13 +94,14 @@ impl Player {
                     .iter()
                     .any(|o| o.position() == screen(future_movement));
             if collide {
-                agb::println!("nah");
+                // agb::println!("nah");
             } else {
                 if let Some(bubble) = state
                     .bubbles
                     .iter_mut()
                     .find(|o| o.contents.position() == screen(future_movement))
                 {
+                    agb::println!("bubel {} {}", self.movement_intent.x, self.movement_intent.y);
                     bubble.push(self.movement_intent);
                 }
                 self.tilepos += self.movement_intent;

@@ -10,6 +10,7 @@ extern crate alloc;
 use agb::display::tiled::TiledMap;
 use agb::input::Button;
 use agb::*;
+use alloc::rc::Rc;
 use alloc::vec::Vec;
 use bubble::Bubble;
 use display::object::Object;
@@ -96,7 +97,7 @@ fn tile(v2: fixnum::Vector2D<i32>) -> fixnum::Vector2D<i16> {
 #[derive(Default)]
 struct State<'oam> {
     bubbles: Vec<Bubble<'oam>>,
-    boxes: Vec<Object<'oam>>,
+    boxes: Vec<Rc<Object<'oam>>>,
 }
 
 #[agb::entry]
@@ -166,8 +167,10 @@ fn main(mut gba: agb::Gba) -> ! {
     bg.set_visible(true);
 
     loop {
-        pl.input(&input, &object, &mut state, &level.tiles);
+        {pl.input(&input, &object, &mut state, &level.tiles);}
         pl.update(&mut player);
+        let i = state.bubbles.into_iter();
+        state.bubbles = i.filter_map(|b| b.step(&mut state.boxes, &level.tiles)).collect();
 
         agb::display::busy_wait_for_vblank();
         object.commit();
